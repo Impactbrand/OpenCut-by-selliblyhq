@@ -61,6 +61,8 @@ export class VideoCache {
 
         if (done || !frame) break;
 
+        // Keep the old frame until we have a valid new one
+        const previousFrame = sinkData.currentFrame;
         sinkData.currentFrame = frame;
         sinkData.lastTime = frame.timestamp;
 
@@ -68,7 +70,15 @@ export class VideoCache {
           return frame;
         }
 
-        if (frame.timestamp > targetTime + 1.0) break;
+        // If we're past the target time, return the previous valid frame
+        if (frame.timestamp > targetTime + 1.0) {
+          // Restore previous frame if new one is too far ahead
+          if (previousFrame && this.isFrameValid(previousFrame, targetTime)) {
+            sinkData.currentFrame = previousFrame;
+            return previousFrame;
+          }
+          break;
+        }
       }
     } catch (error) {
       console.warn("Iterator failed, will restart:", error);
@@ -82,6 +92,9 @@ export class VideoCache {
     time: number
   ): Promise<WrappedCanvas | null> {
     try {
+      // Keep the old frame visible during seek
+      const previousFrame = sinkData.currentFrame;
+
       if (sinkData.iterator) {
         await sinkData.iterator.return();
         sinkData.iterator = null;
@@ -95,6 +108,12 @@ export class VideoCache {
       if (frame) {
         sinkData.currentFrame = frame;
         return frame;
+      }
+
+      // If seek failed, keep showing previous frame
+      if (previousFrame) {
+        sinkData.currentFrame = previousFrame;
+        return previousFrame;
       }
     } catch (error) {
       console.warn("Failed to seek video:", error);
