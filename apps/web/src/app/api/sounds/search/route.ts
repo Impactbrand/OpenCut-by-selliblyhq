@@ -128,6 +128,18 @@ export async function GET(request: NextRequest) {
       commercial_only,
     } = validationResult.data;
 
+    // Check if Freesound is configured
+    if (!env.FREESOUND_CLIENT_ID || !env.FREESOUND_API_KEY) {
+      return NextResponse.json(
+        {
+          error: "Freesound not configured",
+          message:
+            "Sound search requires Freesound API credentials. Check README for setup instructions.",
+        },
+        { status: 503 }
+      );
+    }
+
     if (type === "songs") {
       return NextResponse.json(
         {
