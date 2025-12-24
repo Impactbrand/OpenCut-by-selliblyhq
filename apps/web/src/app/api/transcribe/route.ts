@@ -99,6 +99,15 @@ export async function POST(request: NextRequest) {
 
     const { filename, language, decryptionKey, iv } = validationResult.data;
 
+    // Type guard: Ensure Modal URL is defined (checked by isTranscriptionConfigured above)
+    if (!env.MODAL_TRANSCRIPTION_URL) {
+      // This should never happen due to the check above, but TypeScript needs the guard
+      return NextResponse.json(
+        { error: "Modal transcription URL not configured" },
+        { status: 500 }
+      );
+    }
+
     // Prepare request body for Modal
     const modalRequestBody: any = {
       filename,
