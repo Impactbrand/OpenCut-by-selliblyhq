@@ -68,6 +68,20 @@ export async function POST(request: NextRequest) {
 
     const { fileExtension } = validationResult.data;
 
+    // Type guard: Ensure R2 credentials are defined (checked by isTranscriptionConfigured above)
+    if (
+      !env.R2_ACCESS_KEY_ID ||
+      !env.R2_SECRET_ACCESS_KEY ||
+      !env.R2_BUCKET_NAME ||
+      !env.CLOUDFLARE_ACCOUNT_ID
+    ) {
+      // This should never happen due to the check above, but TypeScript needs the guard
+      return NextResponse.json(
+        { error: "R2 configuration incomplete" },
+        { status: 500 }
+      );
+    }
+
     // Initialize R2 client
     const client = new AwsClient({
       accessKeyId: env.R2_ACCESS_KEY_ID,
